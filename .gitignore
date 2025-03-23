@@ -1,4 +1,3 @@
-# Android-specific
 *.iml
 .gradle
 /local.properties
@@ -12,9 +11,9 @@
 *.aar
 *.keystore
 
-# Gradle cache (exactly your issue!)
+# Gradle and cache files
 .caches/
 caches/
-
-# Kotlin build directories
+.gradle/
 **/build/
+wrapper/
