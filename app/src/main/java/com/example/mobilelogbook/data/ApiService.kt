@@ -19,6 +19,11 @@ interface ApiService {
     @GET("/rest/v1/flight_log?select=*")
     suspend fun getFlights(): List<FlightEntity>
 
+    @GET("flights")
+    suspend fun getFlightsForUser(
+        @Query("username") username: String
+    ): List<FlightEntity>
+
     companion object {
         private const val BASE_URL = "https://aobcyifoourdxqekneuc.supabase.co"
 

@@ -85,9 +85,13 @@ dependencies {
     // Jetpack Compose UI
     implementation(libs.compose.ui)
     implementation(libs.compose.material)
+    implementation("androidx.compose.material3:material3:1.1.2")
     implementation(libs.compose.tooling.preview)
     implementation(libs.activity.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.datastore.preferences)
+    implementation("androidx.compose.material:material-icons-extended")
+
 
 
     // Тестове

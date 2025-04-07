@@ -4,38 +4,57 @@ import android.util.Log
 import com.example.mobilelogbook.data.ApiService
 import com.example.mobilelogbook.data.FlightDao
 import com.example.mobilelogbook.data.FlightEntity
+import com.example.mobilelogbook.session.UserSession
 
 class FlightRepository(
     private val flightDao: FlightDao,
     private val apiService: ApiService
 ) {
-    // Добавяне на нов полет (локално + Supabase)
     suspend fun addFlight(flight: FlightEntity) {
-        flightDao.insertFlight(flight) // Запазва в локалната база
+        flightDao.insertFlight(flight)
         try {
-            val response = apiService.addFlight(flight) // Опитва да качи в Supabase
+            val response = apiService.addFlight(flight)
             if (response.isSuccessful) {
-                flightDao.markFlightAsSynced(flight.id) // Маркира като "synced"
+                flightDao.markFlightAsSynced(flight.id)
                 Log.d("FlightRepository", "Flight ${flight.id} synced successfully.")
             } else {
-                Log.e("FlightRepository", "Failed to sync flight ${flight.id}.")
+                Log.e("FlightRepository", "Sync failed: ${response.code()}")
             }
         } catch (e: Exception) {
-            Log.e("FlightRepository", "Sync error: ${e.message}")
+            Log.e("FlightRepository", "Sync exception: ${e.message}")
         }
     }
 
-    // Синхронизация на локални записи към Supabase
+    suspend fun getAllFlights(): List<FlightEntity> {
+        val username = UserSession.username ?: return emptyList()
+        return try {
+            flightDao.getFlightsByUsername(username)
+        } catch (e: Exception) {
+            Log.e("FlightRepository", "Error fetching local flights: ${e.message}")
+            emptyList()
+        }
+    }
+
+
+    suspend fun getFlightsForCurrentUser(): List<FlightEntity> {
+        val username = UserSession.username ?: return emptyList()
+        return try {
+            val result = apiService.getFlightsForUser(username)
+            flightDao.updateLocalDatabase(result)
+            result
+        } catch (e: Exception) {
+            Log.e("FlightRepository", "Error fetching Supabase flights: ${e.message}")
+            emptyList()
+        }
+    }
+
     suspend fun syncFlights() {
-        val unsyncedFlights = flightDao.getUnsyncedFlights()
-        for (flight in unsyncedFlights) {
+        val unsynced = flightDao.getUnsyncedFlights()
+        for (flight in unsynced) {
             try {
                 val response = apiService.addFlight(flight)
                 if (response.isSuccessful) {
                     flightDao.markFlightAsSynced(flight.id)
-                    Log.d("FlightRepository", "Flight ${flight.id} synced.")
-                } else {
-                    Log.e("FlightRepository", "Sync failed for flight ${flight.id}.")
                 }
             } catch (e: Exception) {
                 Log.e("FlightRepository", "Sync error: ${e.message}")
@@ -43,52 +62,12 @@ class FlightRepository(
         }
     }
 
-    // Зареждане на най-новите полети от Supabase
     suspend fun fetchLatestFlights() {
         try {
             val flights = apiService.getFlights()
-            flightDao.updateLocalDatabase(flights) // Обновява локалната база
-            Log.d("FlightRepository", "Fetched ${flights.size} flights from Supabase.")
+            flightDao.updateLocalDatabase(flights)
         } catch (e: Exception) {
-            Log.e("FlightRepository", "Error fetching flights: ${e.message}")
-        }
-    }
-
-    // Извличане на всички полети от SQLite
-    suspend fun getAllFlights(): List<FlightEntity> {
-        return try {
-            val localFlights = flightDao.getAllFlights()
-            Log.d("FlightRepository", "Loaded ${localFlights.size} flights from SQLite.")
-            localFlights
-        } catch (e: Exception) {
-            Log.e("FlightRepository", "Error fetching flights from SQLite: ${e.message}")
-            emptyList()
-        }
-    }
-
-    // Извличане на всички полети от Supabase
-    suspend fun getAllFlightsFromSupabase(): List<FlightEntity> {
-        return try {
-            val flights = apiService.getFlights() // Извлича данните от Supabase API
-            Log.d("FlightRepository", "Fetched ${flights.size} flights from Supabase.")
-            flights
-        } catch (e: Exception) {
-            Log.e("FlightRepository", "Error fetching flights from Supabase: ${e.message}")
-            emptyList()
-        }
-    }
-
-    // Комбиниране на локалните и онлайн полетите
-    suspend fun getAllFlightsCombined(): List<FlightEntity> {
-        return try {
-            val localFlights = getAllFlights()
-            val remoteFlights = getAllFlightsFromSupabase()
-            val allFlights = (localFlights + remoteFlights).distinctBy { it.id }
-            Log.d("FlightRepository", "Total flights combined: ${allFlights.size} (Local + Supabase)")
-            allFlights
-        } catch (e: Exception) {
-            Log.e("FlightRepository", "Error combining flights: ${e.message}")
-            emptyList()
+            Log.e("FlightRepository", "Fetch error: ${e.message}")
         }
     }
 }

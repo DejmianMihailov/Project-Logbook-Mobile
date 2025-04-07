@@ -1,5 +1,6 @@
 [versions]
 agp = "8.6.1"
+datastorePreferences = "1.1.4"
 kotlin = "1.9.20"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -25,6 +26,7 @@ material3Android = "1.3.1"
 # Основни AndroidX библиотеки
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-material3 = { module = "androidx.compose.material3:material3", version.ref = "material3Android" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 material = { module = "com.google.android.material:material", version.ref = "material" }

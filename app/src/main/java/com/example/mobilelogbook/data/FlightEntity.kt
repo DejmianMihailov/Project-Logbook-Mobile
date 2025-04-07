@@ -47,9 +47,4 @@ data class FlightEntity(
     @SerializedName("status")
     @ColumnInfo(name = "status")
     val status: String = "pending"
-) {
-    // Празен конструктор, нужен за Room
-    constructor() : this(
-        0L, null, null, null, null, null, null, null, null, "pending"
-    )
-}
+)
