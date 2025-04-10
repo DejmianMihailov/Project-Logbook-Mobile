@@ -1,27 +1,26 @@
 package com.example.mobilelogbook.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mobilelogbook.data.FlightEntity
 import com.example.mobilelogbook.repository.FlightRepository
 import com.example.mobilelogbook.session.UserSession
-import com.example.mobilelogbook.ui.theme.ThemeViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddFlightScreen(
     navController: NavController,
     repository: FlightRepository,
-    themeViewModel: ThemeViewModel
+    modifier: Modifier = Modifier
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     var pilotName by remember { mutableStateOf("") }
     var departureAirport by remember { mutableStateOf("") }
@@ -31,16 +30,11 @@ fun AddFlightScreen(
     var aircraft by remember { mutableStateOf("") }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Top
+            .padding(16.dp)
     ) {
-        Text(
-            text = "Add New Flight",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
+        Text("Add Flight", style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
@@ -67,17 +61,15 @@ fun AddFlightScreen(
         OutlinedTextField(
             value = departureTime,
             onValueChange = { departureTime = it },
-            label = { Text("Departure Time (e.g. 2025-04-01 12:00)") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+            label = { Text("Departure Time (e.g. 2025-04-08 12:00)") },
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = arrivalTime,
             onValueChange = { arrivalTime = it },
-            label = { Text("Arrival Time (e.g. 2025-04-01 14:00)") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
+            label = { Text("Arrival Time (e.g. 2025-04-08 14:30)") },
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
@@ -87,24 +79,34 @@ fun AddFlightScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
                 coroutineScope.launch {
-                    val username = UserSession.username ?: "unknown"
+                    if (pilotName.isBlank() || departureAirport.isBlank() || arrivalAirport.isBlank() ||
+                        departureTime.isBlank() || arrivalTime.isBlank()
+                    ) {
+                        Toast.makeText(
+                            context,
+                            "Please fill in all required fields",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return@launch
+                    }
 
-                    val flight = FlightEntity(
-                        pilotName = pilotName,
-                        departureAirport = departureAirport,
-                        arrivalAirport = arrivalAirport,
-                        departureTime = departureTime,
-                        arrivalTime = arrivalTime,
-                        aircraft = aircraft,
-                        username = username
+                    val newFlight = FlightEntity(
+                        pilotName = pilotName.trim(),
+                        departureAirport = departureAirport.trim(),
+                        arrivalAirport = arrivalAirport.trim(),
+                        departureTime = departureTime.trim(),
+                        arrivalTime = arrivalTime.trim(),
+                        aircraft = aircraft.trim(),
+                        username = UserSession.getUsername() ?: "unknown",
+                        status = "pending"
                     )
-
-                    repository.addFlight(flight)
+                    repository.addFlight(newFlight)
+                    Toast.makeText(context, "Flight added", Toast.LENGTH_SHORT).show()
                     navController.popBackStack()
                 }
             },

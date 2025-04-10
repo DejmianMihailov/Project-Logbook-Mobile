@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -11,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mobilelogbook.data.FlightEntity
 import com.example.mobilelogbook.repository.FlightRepository
-import com.example.mobilelogbook.session.UserSession
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -21,28 +22,37 @@ fun FlightListScreen(
     repository: FlightRepository,
     modifier: Modifier = Modifier
 ) {
-    val coroutineScope = rememberCoroutineScope()
     var flights by remember { mutableStateOf<List<FlightEntity>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
-    val username = UserSession.username
+    var syncMessage by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
 
     fun loadFlights() {
-        if (username == null) {
-            Log.e("FlightListScreen", "Username not set, cannot load flights")
-            return
-        }
-
         coroutineScope.launch {
             isLoading = true
             try {
-                val local = repository.getAllFlights()
-                val remote = repository.getFlightsForCurrentUser()
-                flights = (local + remote).distinctBy { it.id }
-                Log.d("FlightListScreen", "Loaded ${flights.size} flights")
+                val localFlights = repository.getAllFlights()
+                val remoteFlights = repository.getFlightsForCurrentUser()
+                flights = (localFlights + remoteFlights).distinctBy { it.id }
+                Log.d("FlightListScreen", "Loaded ${flights.size} total flights")
             } catch (e: Exception) {
-                Log.e("FlightListScreen", "Error: ${e.message}")
+                Log.e("FlightListScreen", "Error loading flights: ${e.message}")
             } finally {
                 isLoading = false
+            }
+        }
+    }
+
+    fun syncFlights() {
+        coroutineScope.launch {
+            try {
+                repository.syncFlights()
+                syncMessage = "Sync successful"
+                Log.d("FlightListScreen", "Synced flights to Supabase")
+                loadFlights()
+            } catch (e: Exception) {
+                syncMessage = "Error during sync: ${e.message}"
+                Log.e("FlightListScreen", "Sync error: ${e.message}")
             }
         }
     }
@@ -51,37 +61,39 @@ fun FlightListScreen(
         loadFlights()
     }
 
-    Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .padding(16.dp)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = "Your Flights",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Button(onClick = { loadFlights() }) {
-                Text("Refresh")
+            Text("Your Flights", style = MaterialTheme.typography.headlineSmall)
+            IconButton(onClick = { syncFlights() }) {
+                Icon(Icons.Default.CloudUpload, contentDescription = "Sync")
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        if (syncMessage.isNotEmpty()) {
+            Text(syncMessage, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         if (isLoading) {
             CircularProgressIndicator()
         } else if (flights.isEmpty()) {
-            Text("No flights found", color = MaterialTheme.colorScheme.onBackground)
+            Text("No flights found.")
         } else {
-            LazyColumn {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxHeight()
+            ) {
                 items(flights) { flight ->
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text("Pilot: ${flight.pilotName}")
@@ -89,6 +101,7 @@ fun FlightListScreen(
                             Text("${flight.departureAirport} → ${flight.arrivalAirport}")
                             Text("Departure: ${flight.departureTime}")
                             Text("Arrival: ${flight.arrivalTime}")
+                            Text("Status: ${flight.status}")
                         }
                     }
                 }

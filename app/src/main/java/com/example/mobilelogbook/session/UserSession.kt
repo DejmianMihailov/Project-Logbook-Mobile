@@ -4,23 +4,24 @@ import android.content.Context
 import android.content.SharedPreferences
 
 object UserSession {
-    private lateinit var preferences: SharedPreferences
-
-    private const val PREF_NAME = "user_session"
+    private const val PREFS_NAME = "user_prefs"
     private const val KEY_USERNAME = "username"
 
+    private lateinit var prefs: SharedPreferences
+
     fun init(context: Context) {
-        preferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     fun setUsername(username: String) {
-        preferences.edit().putString(KEY_USERNAME, username).apply()
+        prefs.edit().putString(KEY_USERNAME, username).apply()
+    }
+
+    fun getUsername(): String? {
+        return prefs.getString(KEY_USERNAME, null)
     }
 
     fun clear() {
-        preferences.edit().remove(KEY_USERNAME).apply()
+        prefs.edit().clear().apply()
     }
-
-    val username: String?
-        get() = preferences.getString(KEY_USERNAME, null)
 }

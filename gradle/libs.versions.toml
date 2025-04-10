@@ -21,6 +21,7 @@ runtimeLivedata = "1.7.8"
 foundationAndroid = "1.7.8"
 uiAndroid = "1.7.8"
 material3Android = "1.3.1"
+benchmarkMacro = "1.3.4"
 
 [libraries]
 # Основни AndroidX библиотеки
@@ -70,6 +71,7 @@ androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtim
 androidx-foundation-android = { group = "androidx.compose.foundation", name = "foundation-android", version.ref = "foundationAndroid" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
+androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-macro", version.ref = "benchmarkMacro" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
