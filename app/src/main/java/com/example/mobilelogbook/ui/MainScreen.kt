@@ -34,20 +34,9 @@ fun MainScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-    // 🔁 Реактивно състояние за логнат потребител
-    val usernameState = remember { mutableStateOf(UserSession.getUsername()) }
-
-    // 🛡️ Ако не е логнат и е в landscape → показваме Login ръчно
-    if (isLandscape && usernameState.value == null) {
-        LoginScreen(
-            navController = navController,
-            themeViewModel = themeViewModel,
-            onLoginSuccess = {
-                usernameState.value = UserSession.getUsername()
-            }
-        )
-        return
-    }
+    val isUserLoggedIn = remember { mutableStateOf(UserSession.getUsername() != null) }
+    var refreshTrigger by remember { mutableStateOf(false) }
+    var showAddFlight by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -60,27 +49,23 @@ fun MainScreen(
                             contentDescription = "Toggle Theme"
                         )
                     }
-                    if (usernameState.value != null) {
+                    if (isUserLoggedIn.value) {
                         IconButton(onClick = {
                             UserSession.clear()
-                            usernameState.value = null
-                            Toast.makeText(context, "Signed out successfully", Toast.LENGTH_SHORT).show()
-
-                            // ❗️ Навигация само в portrait
-                            if (!isLandscape) {
-                                navController.navigate("login") {
-                                    popUpTo("flightList") { inclusive = true }
-                                }
+                            isUserLoggedIn.value = false
+                            showAddFlight = false
+                            navController.navigate("login") {
+                                popUpTo("flightList") { inclusive = true }
                             }
                         }) {
-                            Icon(Icons.Default.Logout, contentDescription = "Sign Out")
+                            Icon(Icons.Default.Logout, contentDescription = "Logout")
                         }
                     }
                 }
             )
         },
         floatingActionButton = {
-            if (!isLandscape && usernameState.value != null) {
+            if (!isLandscape && isUserLoggedIn.value) {
                 FloatingActionButton(onClick = {
                     navController.navigate("addFlight")
                 }) {
@@ -89,8 +74,7 @@ fun MainScreen(
             }
         }
     ) { padding ->
-        if (isLandscape && usernameState.value != null) {
-            // 💻 Split layout на таблет
+        if (isLandscape && isUserLoggedIn.value) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -99,43 +83,71 @@ fun MainScreen(
                 FlightListScreen(
                     navController = navController,
                     repository = repository,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    refreshTrigger = refreshTrigger
                 )
-                AddFlightScreen(
-                    navController = navController,
-                    repository = repository,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp)
-                )
+                if (showAddFlight) {
+                    AddFlightScreen(
+                        navController = navController,
+                        repository = repository,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 8.dp),
+                        onFlightSaved = {
+                            refreshTrigger = !refreshTrigger
+                            showAddFlight = false
+                        },
+                        onBackToList = {
+                            showAddFlight = false
+                        }
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(32.dp)
+                    ) {
+                        Button(onClick = { showAddFlight = true }) {
+                            Text("➕ Add Flight")
+                        }
+                    }
+                }
             }
         } else {
-            // 📱 Навигация за телефон/portrait
             NavHost(
                 navController = navController,
-                startDestination = if (usernameState.value != null) "flightList" else "login",
+                startDestination = if (isUserLoggedIn.value) "flightList" else "login",
                 modifier = Modifier.padding(padding)
             ) {
                 composable("login") {
                     LoginScreen(
                         navController = navController,
-                        themeViewModel = themeViewModel,
                         onLoginSuccess = {
-                            usernameState.value = UserSession.getUsername()
-                            // ✅ Само в portrait навигираме
-                            if (!isLandscape) {
-                                navController.navigate("flightList") {
-                                    popUpTo("login") { inclusive = true }
-                                }
+                            isUserLoggedIn.value = true
+                            refreshTrigger = !refreshTrigger
+                            navController.navigate("flightList") {
+                                popUpTo("login") { inclusive = true }
                             }
-                        }
+                        },
+                        themeViewModel = themeViewModel
                     )
                 }
                 composable("flightList") {
-                    FlightListScreen(navController, repository)
+                    FlightListScreen(
+                        navController = navController,
+                        repository = repository,
+                        refreshTrigger = refreshTrigger
+                    )
                 }
                 composable("addFlight") {
-                    AddFlightScreen(navController, repository)
+                    AddFlightScreen(
+                        navController = navController,
+                        repository = repository,
+                        onFlightSaved = {
+                            refreshTrigger = !refreshTrigger
+                            navController.popBackStack()
+                        }
+                    )
                 }
             }
         }

@@ -46,5 +46,17 @@ data class FlightEntity(
 
     @SerializedName("status")
     @ColumnInfo(name = "status")
-    val status: String = "pending"
+    val status: String = "pending",
+
+    @SerializedName("flight_time_id")
+    @ColumnInfo(name = "flight_time_id")
+    val flightTimeId: Long = 1L,
+
+    @SerializedName("landing_id")
+    @ColumnInfo(name = "landing_id")
+    val landingId: Long = 1L,
+
+    @SerializedName("pilot_function_id")
+    @ColumnInfo(name = "pilot_function_id")
+    val pilotFunctionId: Long = 1L,
 )

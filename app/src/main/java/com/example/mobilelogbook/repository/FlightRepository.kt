@@ -17,9 +17,10 @@ class FlightRepository(
             val response = apiService.addFlight(flight)
             if (response.isSuccessful) {
                 flightDao.markFlightAsSynced(flight.id)
-                Log.d("FlightRepository", "Flight synced to Supabase")
+                Log.d("FlightRepository", "✅ Flight synced to Supabase: ${response.code()}")
             } else {
-                Log.e("FlightRepository", "Supabase sync failed: ${response.code()} - ${response.message()}")
+                val error = response.errorBody()?.string()
+                Log.e("FlightRepository", "❌ Supabase error (${response.code()}): $error")
             }
         } catch (e: Exception) {
             Log.e("FlightRepository", "Error syncing to Supabase: ${e.message}")
