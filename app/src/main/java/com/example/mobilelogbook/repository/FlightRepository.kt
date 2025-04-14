@@ -5,6 +5,7 @@ import com.example.mobilelogbook.data.ApiService
 import com.example.mobilelogbook.data.FlightDao
 import com.example.mobilelogbook.data.FlightEntity
 import com.example.mobilelogbook.session.UserSession
+import com.google.gson.Gson
 
 class FlightRepository(
     private val flightDao: FlightDao,
@@ -13,54 +14,39 @@ class FlightRepository(
 
     suspend fun addFlight(flight: FlightEntity) {
         flightDao.insertFlight(flight)
-        try {
-            val response = apiService.addFlight(flight)
-            if (response.isSuccessful) {
-                flightDao.markFlightAsSynced(flight.id)
-                Log.d("FlightRepository", "✅ Flight synced to Supabase: ${response.code()}")
-            } else {
-                val error = response.errorBody()?.string()
-                Log.e("FlightRepository", "❌ Supabase error (${response.code()}): $error")
-            }
-        } catch (e: Exception) {
-            Log.e("FlightRepository", "Error syncing to Supabase: ${e.message}")
-        }
-    }
 
-    suspend fun updateFlight(flight: FlightEntity) {
         try {
-            val response = apiService.updateFlight(flight, "eq.${flight.id}")
+            val payload = flight.toMap()
+                .filterValues { it != null }
+                .mapValues { it.value!! } // convert to Map<String, Any>
+
+            Log.d("FlightRepository", "📤 Sending to Supabase: ${Gson().toJson(payload)}")
+            val response = apiService.addFlight(payload)
+
             if (response.isSuccessful) {
-                Log.d("FlightRepository", "Flight ${flight.id} updated successfully in Supabase")
+                flightDao.markFlightAsSynced(flight.id ?: 0L)
+                Log.d("FlightRepository", "✅ Flight synced to Supabase")
             } else {
-                Log.e("FlightRepository", "Failed to update flight: ${response.code()}")
+                Log.e("FlightRepository", "❌ Supabase sync failed: ${response.code()} - ${response.message()}")
             }
         } catch (e: Exception) {
-            Log.e("FlightRepository", "Update error: ${e.message}")
+            Log.e("FlightRepository", "🔥 Sync exception: ${e.message}")
         }
     }
 
     suspend fun getAllFlights(): List<FlightEntity> {
         val username = UserSession.getUsername() ?: return emptyList()
-        return try {
-            val localFlights = flightDao.getFlightsByUsername(username)
-            Log.d("FlightRepository", "Fetched ${localFlights.size} local flights for $username")
-            localFlights
-        } catch (e: Exception) {
-            Log.e("FlightRepository", "Error fetching local flights: ${e.message}")
-            emptyList()
-        }
+        return flightDao.getFlightsByUsername(username)
     }
 
     suspend fun getFlightsForCurrentUser(): List<FlightEntity> {
         val username = UserSession.getUsername() ?: return emptyList()
         return try {
-            val response = apiService.getFlightsForUser(mapOf("username" to "eq.$username"))
-            Log.d("FlightRepository", "Fetched ${response.size} flights from Supabase for $username")
-            flightDao.updateLocalDatabase(response)
-            response
+            val flights = apiService.getFlightsForUser(mapOf("username" to "eq.$username"))
+            flightDao.updateLocalDatabase(flights)
+            flights
         } catch (e: Exception) {
-            Log.e("FlightRepository", "Error fetching flights from Supabase: ${e.message}")
+            Log.e("FlightRepository", "Error fetching Supabase flights: ${e.message}")
             emptyList()
         }
     }
@@ -69,15 +55,21 @@ class FlightRepository(
         val unsynced = flightDao.getUnsyncedFlights()
         for (flight in unsynced) {
             try {
-                val response = apiService.addFlight(flight)
+                val payload = flight.toMap()
+                    .filterValues { it != null }
+                    .mapValues { it.value!! }
+
+                Log.d("FlightRepository", "📤 Syncing flight: ${Gson().toJson(payload)}")
+                val response = apiService.addFlight(payload)
+
                 if (response.isSuccessful) {
-                    flightDao.markFlightAsSynced(flight.id)
-                    Log.d("FlightRepository", "Synced flight ${flight.id}")
+                    flightDao.markFlightAsSynced(flight.id ?: 0L)
+                    Log.d("FlightRepository", "✅ Synced flight ${flight.id}")
                 } else {
-                    Log.e("FlightRepository", "Sync failed: ${response.code()}")
+                    Log.e("FlightRepository", "❌ Sync failed: ${response.code()}")
                 }
             } catch (e: Exception) {
-                Log.e("FlightRepository", "Exception during sync: ${e.message}")
+                Log.e("FlightRepository", "🔥 Exception during sync: ${e.message}")
             }
         }
     }
@@ -86,9 +78,9 @@ class FlightRepository(
         try {
             val response = apiService.getFlights()
             flightDao.updateLocalDatabase(response)
-            Log.d("FlightRepository", "Fetched ${response.size} flights from Supabase")
+            Log.d("FlightRepository", "✅ Fetched ${response.size} flights from Supabase")
         } catch (e: Exception) {
-            Log.e("FlightRepository", "Fetch error: ${e.message}")
+            Log.e("FlightRepository", "❌ Error fetching flights from Supabase: ${e.message}")
         }
     }
 }

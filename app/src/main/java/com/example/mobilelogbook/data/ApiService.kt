@@ -1,6 +1,5 @@
 package com.example.mobilelogbook.data
 
-import com.example.mobilelogbook.data.FlightEntity
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -19,12 +18,12 @@ interface ApiService {
 
     @POST("flight_log")
     suspend fun addFlight(
-        @Body flight: FlightEntity
+        @Body flight: Map<String, Any>
     ): Response<Void>
 
     @PATCH("flight_log")
     suspend fun updateFlight(
-        @Body flight: FlightEntity,
+        @Body flight: Map<String, Any>,
         @Query("id") id: String
     ): Response<Void>
 
@@ -53,3 +52,7 @@ interface ApiService {
         }
     }
 }
+
+
+//        private const val BASE_URL = "https://aobcyifoourdxqekneuc.supabase.co/rest/v1/"
+//        private const val API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvYmN5aWZvb3VyZHhxZWtuZXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMjgwNzUsImV4cCI6MjA1NTkwNDA3NX0.0q2WRoKr9MQS5ByjV3fAh1s-McE4moG76FjjddYW7bg"

@@ -4,10 +4,7 @@ import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -75,6 +72,7 @@ fun MainScreen(
         }
     ) { padding ->
         if (isLandscape && isUserLoggedIn.value) {
+            // ✅ LANDSCAPE – двойно разпределение
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -86,6 +84,7 @@ fun MainScreen(
                     modifier = Modifier.weight(1f),
                     refreshTrigger = refreshTrigger
                 )
+
                 if (showAddFlight) {
                     AddFlightScreen(
                         navController = navController,
@@ -105,7 +104,7 @@ fun MainScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(32.dp)
+                            .padding(32.dp),
                     ) {
                         Button(onClick = { showAddFlight = true }) {
                             Text("➕ Add Flight")
@@ -114,6 +113,7 @@ fun MainScreen(
                 }
             }
         } else {
+            // ✅ PORTRAIT – навигация
             NavHost(
                 navController = navController,
                 startDestination = if (isUserLoggedIn.value) "flightList" else "login",

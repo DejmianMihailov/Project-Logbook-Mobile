@@ -7,33 +7,42 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LabeledDropdown(
     label: String,
-    options: List<Pair<Int, String>>, // ID + display text
+    options: List<Pair<Int, String>>,
     selectedId: Int?,
     onSelectedChange: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedText = options.firstOrNull { it.first == selectedId }?.second ?: "Select $label"
+
+    val selectedText = options.find { it.first == selectedId }?.second ?: "Select"
 
     Column(modifier = modifier.padding(vertical = 8.dp)) {
         Text(text = label, style = MaterialTheme.typography.labelLarge)
-        Box {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
             OutlinedTextField(
+                readOnly = true,
                 value = selectedText,
                 onValueChange = {},
+                label = { Text("Select $label") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
+                    .menuAnchor()
                     .fillMaxWidth()
-                    .clickable { expanded = true },
-                readOnly = true,
-                enabled = false
             )
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                options.forEach { (id, labelText) ->
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                options.forEach { (id, text) ->
                     DropdownMenuItem(
-                        text = { Text(labelText) },
+                        text = { Text(text) },
                         onClick = {
                             onSelectedChange(id)
                             expanded = false

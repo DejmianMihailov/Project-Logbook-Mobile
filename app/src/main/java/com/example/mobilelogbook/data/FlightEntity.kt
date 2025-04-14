@@ -14,11 +14,11 @@ data class FlightEntity(
 
     @SerializedName("departure_time")
     @ColumnInfo(name = "departure_time")
-    val departureTime: String? = null,
+    val departureTime: String,
 
     @SerializedName("arrival_time")
     @ColumnInfo(name = "arrival_time")
-    val arrivalTime: String? = null,
+    val arrivalTime: String,
 
     @SerializedName("flight_duration")
     @ColumnInfo(name = "flight_duration")
@@ -26,15 +26,15 @@ data class FlightEntity(
 
     @SerializedName("pilot_name")
     @ColumnInfo(name = "pilot_name")
-    val pilotName: String? = null,
+    val pilotName: String,
 
     @SerializedName("departure_airport")
     @ColumnInfo(name = "departure_airport")
-    val departureAirport: String? = null,
+    val departureAirport: String,
 
     @SerializedName("arrival_airport")
     @ColumnInfo(name = "arrival_airport")
-    val arrivalAirport: String? = null,
+    val arrivalAirport: String,
 
     @SerializedName("aircraft")
     @ColumnInfo(name = "aircraft")
@@ -42,7 +42,7 @@ data class FlightEntity(
 
     @SerializedName("username")
     @ColumnInfo(name = "username")
-    val username: String? = null,
+    val username: String,
 
     @SerializedName("status")
     @ColumnInfo(name = "status")
@@ -50,13 +50,28 @@ data class FlightEntity(
 
     @SerializedName("flight_time_id")
     @ColumnInfo(name = "flight_time_id")
-    val flightTimeId: Long = 1L,
+    val flightTimeId: Long,
 
     @SerializedName("landing_id")
     @ColumnInfo(name = "landing_id")
-    val landingId: Long = 1L,
+    val landingId: Long,
 
     @SerializedName("pilot_function_id")
     @ColumnInfo(name = "pilot_function_id")
-    val pilotFunctionId: Long = 1L,
-)
+    val pilotFunctionId: Long
+) {
+    fun toMap(): Map<String, Any> = mapOf(
+        "departure_time" to departureTime,
+        "arrival_time" to arrivalTime,
+        "flight_duration" to (flightDuration ?: 0),
+        "pilot_name" to pilotName,
+        "departure_airport" to departureAirport,
+        "arrival_airport" to arrivalAirport,
+        "aircraft" to (aircraft ?: ""),
+        "username" to username,
+        "status" to status,
+        "flight_time_id" to flightTimeId,
+        "landing_id" to landingId,
+        "pilot_function_id" to pilotFunctionId
+    )
+}
