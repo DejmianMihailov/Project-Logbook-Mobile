@@ -21,7 +21,7 @@ class FlightRepository(
                 .mapValues { it.value!! } // convert to Map<String, Any>
 
             Log.d("FlightRepository", "📤 Sending to Supabase: ${Gson().toJson(payload)}")
-            val response = apiService.addFlight(payload)
+            val response = apiService.addFlight(flight.toMap())
 
             if (response.isSuccessful) {
                 flightDao.markFlightAsSynced(flight.id ?: 0L)

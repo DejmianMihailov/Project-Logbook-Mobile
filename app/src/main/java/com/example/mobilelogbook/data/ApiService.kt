@@ -18,7 +18,7 @@ interface ApiService {
 
     @POST("flight_log")
     suspend fun addFlight(
-        @Body flight: Map<String, Any>
+        @Body flight: Map<String, @JvmSuppressWildcards Any>
     ): Response<Void>
 
     @PATCH("flight_log")
