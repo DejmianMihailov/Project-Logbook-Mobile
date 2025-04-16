@@ -14,11 +14,11 @@ data class FlightEntity(
 
     @SerializedName("departure_time")
     @ColumnInfo(name = "departure_time")
-    val departureTime: String,
+    val departureTime: String, // ISO формат
 
     @SerializedName("arrival_time")
     @ColumnInfo(name = "arrival_time")
-    val arrivalTime: String,
+    val arrivalTime: String, // ISO формат
 
     @SerializedName("flight_duration")
     @ColumnInfo(name = "flight_duration")
@@ -59,19 +59,4 @@ data class FlightEntity(
     @SerializedName("pilot_function_id")
     @ColumnInfo(name = "pilot_function_id")
     val pilotFunctionId: Long
-) {
-    fun toMap(): Map<String, Any> = mapOf(
-        "departure_time" to departureTime,
-        "arrival_time" to arrivalTime,
-        "flight_duration" to (flightDuration ?: 0),
-        "pilot_name" to pilotName,
-        "departure_airport" to departureAirport,
-        "arrival_airport" to arrivalAirport,
-        "aircraft" to (aircraft ?: ""),
-        "username" to username,
-        "status" to status,
-        "flight_time_id" to flightTimeId,
-        "landing_id" to landingId,
-        "pilot_function_id" to pilotFunctionId
-    )
-}
+)

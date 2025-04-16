@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LabeledDropdown(
     label: String,
@@ -17,38 +16,27 @@ fun LabeledDropdown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-
-    val selectedText = options.find { it.first == selectedId }?.second ?: "Select"
+    val selectedText = options.find { it.first == selectedId }?.second ?: "Select $label"
 
     Column(modifier = modifier.padding(vertical = 8.dp)) {
-        Text(text = label, style = MaterialTheme.typography.labelLarge)
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                readOnly = true,
-                value = selectedText,
-                onValueChange = {},
-                label = { Text("Select $label") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                options.forEach { (id, text) ->
-                    DropdownMenuItem(
-                        text = { Text(text) },
-                        onClick = {
-                            onSelectedChange(id)
-                            expanded = false
-                        }
-                    )
-                }
+        Text(text = label, style = MaterialTheme.typography.bodyMedium)
+        OutlinedTextField(
+            value = selectedText,
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+            enabled = false,
+            readOnly = true
+        )
+
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (id, text) ->
+                DropdownMenuItem(
+                    text = { Text(text) },
+                    onClick = {
+                        onSelectedChange(id)
+                        expanded = false
+                    }
+                )
             }
         }
     }

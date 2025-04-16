@@ -51,8 +51,11 @@ fun MainScreen(
                             UserSession.clear()
                             isUserLoggedIn.value = false
                             showAddFlight = false
-                            navController.navigate("login") {
-                                popUpTo("flightList") { inclusive = true }
+                            Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
+                            if (!isLandscape) {
+                                navController.navigate("login") {
+                                    popUpTo("flightList") { inclusive = true }
+                                }
                             }
                         }) {
                             Icon(Icons.Default.Logout, contentDescription = "Logout")
@@ -72,7 +75,6 @@ fun MainScreen(
         }
     ) { padding ->
         if (isLandscape && isUserLoggedIn.value) {
-            // ✅ LANDSCAPE – двойно разпределение
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -104,7 +106,7 @@ fun MainScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(32.dp),
+                            .padding(32.dp)
                     ) {
                         Button(onClick = { showAddFlight = true }) {
                             Text("➕ Add Flight")
@@ -112,11 +114,10 @@ fun MainScreen(
                     }
                 }
             }
-        } else {
-            // ✅ PORTRAIT – навигация
+        } else if (!isUserLoggedIn.value) {
             NavHost(
                 navController = navController,
-                startDestination = if (isUserLoggedIn.value) "flightList" else "login",
+                startDestination = "login",
                 modifier = Modifier.padding(padding)
             ) {
                 composable("login") {
@@ -132,6 +133,13 @@ fun MainScreen(
                         themeViewModel = themeViewModel
                     )
                 }
+            }
+        } else {
+            NavHost(
+                navController = navController,
+                startDestination = "flightList",
+                modifier = Modifier.padding(padding)
+            ) {
                 composable("flightList") {
                     FlightListScreen(
                         navController = navController,

@@ -34,15 +34,14 @@ fun AddFlightScreen(
     val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val isoFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-
+    // Полета
     var pilotName by remember { mutableStateOf("") }
     var departureAirport by remember { mutableStateOf("") }
     var arrivalAirport by remember { mutableStateOf("") }
     var aircraft by remember { mutableStateOf("") }
 
-    var departureTime by remember { mutableStateOf<LocalDateTime?>(null) }
-    var arrivalTime by remember { mutableStateOf<LocalDateTime?>(null) }
+    var departureTime: LocalDateTime? by remember { mutableStateOf(null) }
+    var arrivalTime: LocalDateTime? by remember { mutableStateOf(null) }
 
     val flightTimeOptions = listOf(1 to "Short (0–30 min)", 2 to "Medium (30–60 min)", 3 to "Long (> 60 min)")
     val landingOptions = listOf(1 to "Day Landing", 2 to "Night Landing")
@@ -52,11 +51,14 @@ fun AddFlightScreen(
     var selectedLandingId by remember { mutableStateOf<Int?>(null) }
     var selectedPilotFunctionId by remember { mutableStateOf<Int?>(null) }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+    val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Column(
             modifier = modifier
-                .padding(padding)
+                .padding(paddingValues)
                 .padding(16.dp)
+                .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
             Text("Add Flight", style = MaterialTheme.typography.headlineSmall)
@@ -105,13 +107,22 @@ fun AddFlightScreen(
                         }
 
                         try {
-                            val duration = Duration.between(departureTime, arrivalTime).toMinutes().toInt()
-                            val flight = FlightEntity(
+                            val formattedDeparture = departureTime?.format(formatter)
+                            val formattedArrival = arrivalTime?.format(formatter)
+
+                            if (formattedDeparture == null || formattedArrival == null) {
+                                Toast.makeText(context, "⚠️ Invalid date/time", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+
+                            val duration = Duration.between(departureTime!!, arrivalTime!!).toMinutes().toInt()
+
+                            val newFlight = FlightEntity(
                                 pilotName = pilotName.trim(),
                                 departureAirport = departureAirport.trim(),
                                 arrivalAirport = arrivalAirport.trim(),
-                                departureTime = departureTime!!.format(isoFormatter),
-                                arrivalTime = arrivalTime!!.format(isoFormatter),
+                                departureTime = formattedDeparture,
+                                arrivalTime = formattedArrival,
                                 flightDuration = duration,
                                 aircraft = aircraft.trim(),
                                 username = currentUsername,
@@ -120,12 +131,13 @@ fun AddFlightScreen(
                                 landingId = selectedLandingId!!.toLong(),
                                 pilotFunctionId = selectedPilotFunctionId!!.toLong()
                             )
-                            repository.addFlight(flight)
-                            snackbarHostState.showSnackbar("✅ Flight added")
+
+                            repository.addFlight(newFlight)
+                            snackbarHostState.showSnackbar("✅ Flight added successfully")
                             onFlightSaved?.invoke()
                             navController.popBackStack()
                         } catch (e: Exception) {
-                            Toast.makeText(context, "❌ Error: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "⚠️ Error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 },

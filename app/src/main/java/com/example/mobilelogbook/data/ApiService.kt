@@ -1,10 +1,10 @@
 package com.example.mobilelogbook.data
 
 import okhttp3.OkHttpClient
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
-import retrofit2.Response
 
 interface ApiService {
 
@@ -18,12 +18,12 @@ interface ApiService {
 
     @POST("flight_log")
     suspend fun addFlight(
-        @Body flight: Map<String, @JvmSuppressWildcards Any>
+        @Body payload: Map<String, @JvmSuppressWildcards Any>
     ): Response<Void>
 
     @PATCH("flight_log")
     suspend fun updateFlight(
-        @Body flight: Map<String, Any>,
+        @Body payload: Map<String, @JvmSuppressWildcards Any>,
         @Query("id") id: String
     ): Response<Void>
 
@@ -52,6 +52,9 @@ interface ApiService {
         }
     }
 }
+
+
+
 
 
 //        private const val BASE_URL = "https://aobcyifoourdxqekneuc.supabase.co/rest/v1/"
