@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.mobilelogbook.model.AppUser
 
-@Database(entities = [FlightEntity::class], version = 9, exportSchema = false)
+@Database(entities = [FlightEntity::class, AppUser::class], version = 14, exportSchema = false)
 abstract class FlightDatabase : RoomDatabase() {
     abstract fun flightDao(): FlightDao
+    abstract fun userDao(): UserDao
 
     companion object {
         @Volatile

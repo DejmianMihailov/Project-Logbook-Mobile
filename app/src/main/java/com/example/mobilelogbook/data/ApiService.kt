@@ -1,61 +1,51 @@
 package com.example.mobilelogbook.data
 
-import okhttp3.OkHttpClient
+import com.example.mobilelogbook.dto.LoginRequest
+import com.example.mobilelogbook.model.*
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 
 interface ApiService {
 
-    @GET("flight_log")
-    suspend fun getFlights(): List<FlightEntity>
-
-    @GET("flight_log")
-    suspend fun getFlightsForUser(
-        @QueryMap filters: Map<String, String>
-    ): List<FlightEntity>
-
-    @POST("flight_log")
+    @POST("/api/mobile/flights")
     suspend fun addFlight(
-        @Body payload: Map<String, @JvmSuppressWildcards Any>
-    ): Response<Void>
+        @Body flight: FlightLogMobileDto,
+        @Header("Cookie") session: String
+    ): Response<Unit>
 
-    @PATCH("flight_log")
-    suspend fun updateFlight(
-        @Body payload: Map<String, @JvmSuppressWildcards Any>,
-        @Query("id") id: String
-    ): Response<Void>
+    @POST("/api/mobile/flights/batch")
+    suspend fun syncFlights(
+        @Body flights: List<FlightLogMobileDto>,
+        @Header("Cookie") session: String
+    ): Response<Unit>
+
+    @GET("/api/mobile/flights/user/{username}")
+    suspend fun getFlightsForUser(@Path("username") username: String): List<FlightLogMobileDto>
+
+    @GET("/api/aircrafts")
+    suspend fun getAircrafts(): List<Aircraft>
+
+    @GET("/api/flighttimes")
+    suspend fun getFlightTimes(): List<FlightTime>
+
+    @GET("/api/landings")
+    suspend fun getLandings(): List<Landing>
+
+    @GET("/api/takeoffs")
+    suspend fun getTakeoffs(): List<Takeoff>
+
+    @GET("/api/pilotfunctions")
+    suspend fun getPilotFunctions(): List<PilotFunction>
+
+    @GET("/api/aircrafts")
+    suspend fun getAllAircrafts(): List<Aircraft>
+
+    @POST("/api/mobile/login")
+    suspend fun login(@Body request: LoginRequest): Response<AppUser>
 
     companion object {
-        private const val BASE_URL = "https://aobcyifoourdxqekneuc.supabase.co/rest/v1/"
-        private const val API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvYmN5aWZvb3VyZHhxZWtuZXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMjgwNzUsImV4cCI6MjA1NTkwNDA3NX0.0q2WRoKr9MQS5ByjV3fAh1s-McE4moG76FjjddYW7bg"
-
         fun create(): ApiService {
-            val client = OkHttpClient.Builder()
-                .addInterceptor { chain ->
-                    val request = chain.request().newBuilder()
-                        .addHeader("apikey", API_KEY)
-                        .addHeader("Authorization", "Bearer $API_KEY")
-                        .addHeader("Content-Type", "application/json")
-                        .build()
-                    chain.proceed(request)
-                }
-                .build()
-
-            return Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .client(client)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
-                .create(ApiService::class.java)
+            return RetrofitClient.retrofit.create(ApiService::class.java)
         }
     }
 }
-
-
-
-
-
-//        private const val BASE_URL = "https://aobcyifoourdxqekneuc.supabase.co/rest/v1/"
-//        private const val API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvYmN5aWZvb3VyZHhxZWtuZXVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMjgwNzUsImV4cCI6MjA1NTkwNDA3NX0.0q2WRoKr9MQS5ByjV3fAh1s-McE4moG76FjjddYW7bg"

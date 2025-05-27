@@ -11,6 +11,7 @@ android {
     namespace = "com.example.mobilelogbook"
     compileSdk = 35
 
+
     defaultConfig {
         applicationId = "com.example.mobilelogbook"
         minSdk = 26
@@ -34,6 +35,20 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+    packaging {
+        resources {
+            excludes += setOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/DEPENDENCIES",
+                "META-INF/io.netty.versions.properties"
+            )
+        }
+    }
+
     kotlinOptions {
         jvmTarget = "1.8"
     }
@@ -68,12 +83,15 @@ dependencies {
     implementation(libs.androidx.foundation.android)
     implementation(libs.androidx.ui.android)
     implementation(libs.androidx.material3.android)
+    implementation(libs.androidx.media3.common.ktx)
     kapt(libs.room.compiler)
     implementation(libs.room.ktx)
 
     // Retrofit (REST API за PostgreSQL или Supabase)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
 
     // WorkManager (синхронизация)
     implementation(libs.workmanager)

@@ -1,22 +1,16 @@
 package com.example.mobilelogbook.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.mobilelogbook.data.FlightEntity
-import com.example.mobilelogbook.repository.FlightRepository
 import com.example.mobilelogbook.session.UserSession
-import com.example.mobilelogbook.ui.components.DateTimePickerDialog
-import com.example.mobilelogbook.ui.components.LabeledDropdown
-import kotlinx.coroutines.launch
-import java.time.Duration
+import com.example.mobilelogbook.viewmodel.MobileFlightViewModel
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -24,136 +18,106 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddFlightScreen(
     navController: NavController,
-    repository: FlightRepository,
-    modifier: Modifier = Modifier,
-    onFlightSaved: (() -> Unit)? = null,
+    flightViewModel: MobileFlightViewModel,
+    onFlightSaved: () -> Unit,
     onBackToList: (() -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Полета
-    var pilotName by remember { mutableStateOf("") }
     var departureAirport by remember { mutableStateOf("") }
     var arrivalAirport by remember { mutableStateOf("") }
-    var aircraft by remember { mutableStateOf("") }
+    var pilotName by remember { mutableStateOf("") }
+    var flightDuration by remember { mutableStateOf("") }
 
-    var departureTime: LocalDateTime? by remember { mutableStateOf(null) }
-    var arrivalTime: LocalDateTime? by remember { mutableStateOf(null) }
+    var aircraftMake by remember { mutableStateOf("") }
+    var aircraftModel by remember { mutableStateOf("") }
+    var aircraftRegistration by remember { mutableStateOf("") }
 
-    val flightTimeOptions = listOf(1 to "Short (0–30 min)", 2 to "Medium (30–60 min)", 3 to "Long (> 60 min)")
-    val landingOptions = listOf(1 to "Day Landing", 2 to "Night Landing")
-    val pilotFunctionOptions = listOf(1 to "Pilot in Command", 2 to "First Officer")
+    var multiPilotTime by remember { mutableStateOf("") }
+    var singlePilotTime by remember { mutableStateOf("") }
+    var totalFlightTime by remember { mutableStateOf("") }
 
-    var selectedFlightTimeId by remember { mutableStateOf<Int?>(null) }
-    var selectedLandingId by remember { mutableStateOf<Int?>(null) }
-    var selectedPilotFunctionId by remember { mutableStateOf<Int?>(null) }
+    var takeoffType by remember { mutableStateOf("") }
+    var landingType by remember { mutableStateOf("") }
+    var operationalCondition by remember { mutableStateOf("") }
 
-    val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    var pilotFunction by remember { mutableStateOf("") }
+    var pilotRole by remember { mutableStateOf("") }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+    var remarksText by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = { TopAppBar(title = { Text("Add Flight") }) }
+    ) { innerPadding ->
         Column(
-            modifier = modifier
-                .padding(paddingValues)
+            modifier = Modifier
+                .padding(innerPadding)
                 .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(scrollState)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Add Flight", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(value = departureAirport, onValueChange = { departureAirport = it }, label = { Text("Departure Airport") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = arrivalAirport, onValueChange = { arrivalAirport = it }, label = { Text("Arrival Airport") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = pilotName, onValueChange = { pilotName = it }, label = { Text("Pilot Name") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = flightDuration, onValueChange = { flightDuration = it }, label = { Text("Flight Duration (minutes)") }, modifier = Modifier.fillMaxWidth())
 
-            OutlinedTextField(pilotName, { pilotName = it }, label = { Text("Pilot Name") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(departureAirport, { departureAirport = it }, label = { Text("Departure Airport") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(arrivalAirport, { arrivalAirport = it }, label = { Text("Arrival Airport") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(aircraft, { aircraft = it }, label = { Text("Aircraft") }, modifier = Modifier.fillMaxWidth())
+            Text("Aircraft", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(value = aircraftMake, onValueChange = { aircraftMake = it }, label = { Text("Make") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = aircraftModel, onValueChange = { aircraftModel = it }, label = { Text("Model") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = aircraftRegistration, onValueChange = { aircraftRegistration = it }, label = { Text("Registration") }, modifier = Modifier.fillMaxWidth())
 
-            DateTimePickerDialog(
-                label = "Departure Time",
-                selectedDateTime = departureTime,
-                onDateTimeSelected = { departureTime = it },
-                modifier = Modifier.fillMaxWidth()
-            )
+            Text("Flight Time", style = MaterialTheme.typography.titleMedium)
+            OutlinedTextField(value = multiPilotTime, onValueChange = { multiPilotTime = it }, label = { Text("Multi Pilot Time (min)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = singlePilotTime, onValueChange = { singlePilotTime = it }, label = { Text("Single Pilot Time (min)") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = totalFlightTime, onValueChange = { totalFlightTime = it }, label = { Text("Total Flight Time (min)") }, modifier = Modifier.fillMaxWidth())
 
-            DateTimePickerDialog(
-                label = "Arrival Time",
-                selectedDateTime = arrivalTime,
-                onDateTimeSelected = { arrivalTime = it },
-                modifier = Modifier.fillMaxWidth()
-            )
+            OutlinedTextField(value = takeoffType, onValueChange = { takeoffType = it }, label = { Text("Takeoff Type") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = landingType, onValueChange = { landingType = it }, label = { Text("Landing Type") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = operationalCondition, onValueChange = { operationalCondition = it }, label = { Text("Operational Condition") }, modifier = Modifier.fillMaxWidth())
 
-            LabeledDropdown("Flight Time", flightTimeOptions, selectedFlightTimeId, { selectedFlightTimeId = it }, Modifier.fillMaxWidth())
-            LabeledDropdown("Landing Type", landingOptions, selectedLandingId, { selectedLandingId = it }, Modifier.fillMaxWidth())
-            LabeledDropdown("Pilot Role", pilotFunctionOptions, selectedPilotFunctionId, { selectedPilotFunctionId = it }, Modifier.fillMaxWidth())
-
-            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(value = pilotFunction, onValueChange = { pilotFunction = it }, label = { Text("Pilot Function") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = pilotRole, onValueChange = { pilotRole = it }, label = { Text("Pilot Role") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = remarksText, onValueChange = { remarksText = it }, label = { Text("Remarks") }, modifier = Modifier.fillMaxWidth())
 
             Button(
                 onClick = {
-                    coroutineScope.launch {
-                        val currentUsername = UserSession.getUsername()
-                        if (currentUsername.isNullOrBlank()) {
-                            Toast.makeText(context, "⚠️ Not logged in", Toast.LENGTH_LONG).show()
-                            return@launch
-                        }
+                    val username = UserSession.getUsername() ?: return@Button
+                    val now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
-                        if (pilotName.isBlank() || departureAirport.isBlank() || arrivalAirport.isBlank()
-                            || departureTime == null || arrivalTime == null
-                            || selectedFlightTimeId == null || selectedLandingId == null || selectedPilotFunctionId == null
-                        ) {
-                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
-                            return@launch
-                        }
+                    val flight = FlightEntity(
+                        departureTime = now,
+                        arrivalTime = now,
+                        flightDuration = flightDuration.toIntOrNull() ?: 0,
+                        pilotName = pilotName,
+                        username = username,
+                        departureAirport = departureAirport,
+                        arrivalAirport = arrivalAirport,
+                        aircraftMake = aircraftMake,
+                        aircraftModel = aircraftModel,
+                        aircraftRegistration = aircraftRegistration,
+                        multiPilotTime = multiPilotTime.toIntOrNull(),
+                        singlePilotTime = singlePilotTime.toIntOrNull(),
+                        totalFlightTime = totalFlightTime.toLongOrNull(),
+                        takeoffType = takeoffType,
+                        landingType = landingType,
+                        operationalCondition = operationalCondition,
+                        pilotFunction = pilotFunction,
+                        pilotRole = pilotRole,
+                        remarksText = remarksText,
+                        synced = false
+                    )
 
-                        try {
-                            val formattedDeparture = departureTime?.format(formatter)
-                            val formattedArrival = arrivalTime?.format(formatter)
-
-                            if (formattedDeparture == null || formattedArrival == null) {
-                                Toast.makeText(context, "⚠️ Invalid date/time", Toast.LENGTH_SHORT).show()
-                                return@launch
-                            }
-
-                            val duration = Duration.between(departureTime!!, arrivalTime!!).toMinutes().toInt()
-
-                            val newFlight = FlightEntity(
-                                pilotName = pilotName.trim(),
-                                departureAirport = departureAirport.trim(),
-                                arrivalAirport = arrivalAirport.trim(),
-                                departureTime = formattedDeparture,
-                                arrivalTime = formattedArrival,
-                                flightDuration = duration,
-                                aircraft = aircraft.trim(),
-                                username = currentUsername,
-                                status = "pending",
-                                flightTimeId = selectedFlightTimeId!!.toLong(),
-                                landingId = selectedLandingId!!.toLong(),
-                                pilotFunctionId = selectedPilotFunctionId!!.toLong()
-                            )
-
-                            repository.addFlight(newFlight)
-                            snackbarHostState.showSnackbar("✅ Flight added successfully")
-                            onFlightSaved?.invoke()
-                            navController.popBackStack()
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "⚠️ Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    flightViewModel.addFlightAndSync(flight)
+                    onFlightSaved()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Save Flight")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             onBackToList?.let {
-                Button(
-                    onClick = { it() },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("← Back to Flights")
+                TextButton(onClick = { it() }) {
+                    Text("Back to List")
                 }
             }
         }

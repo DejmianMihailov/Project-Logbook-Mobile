@@ -7,9 +7,9 @@ import java.util.concurrent.TimeUnit
 
 object SyncManager {
 
-    fun startSyncWorker(context: Context) {
+    fun startPeriodicSync(context: Context) {
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .setRequiredNetworkType(NetworkType.CONNECTED) // Само с интернет
             .build()
 
         val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)

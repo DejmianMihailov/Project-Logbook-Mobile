@@ -7,26 +7,36 @@ import androidx.work.WorkerParameters
 import com.example.mobilelogbook.data.ApiService
 import com.example.mobilelogbook.data.FlightDatabase
 import com.example.mobilelogbook.repository.FlightRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class SyncWorker(
-    context: Context,
+    appContext: Context,
     workerParams: WorkerParameters
-) : CoroutineWorker(context, workerParams) {
+) : CoroutineWorker(appContext, workerParams) {
 
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        return@withContext try {
-            val dao = FlightDatabase.getDatabase(applicationContext).flightDao()
+    override suspend fun doWork(): Result {
+        return try {
+            val database = FlightDatabase.getDatabase(applicationContext)
+            val dao = database.flightDao()
+            val userDao = database.userDao() // ✅ Добавено
             val api = ApiService.create()
-            val repository = FlightRepository(dao, api)
 
-            repository.syncFlights()
-            repository.fetchLatestFlights()
-            Log.d("SyncWorker", " Sync completed")
-            Result.success()
+            val repository = FlightRepository(dao, userDao, api) // ✅ Поправено
+
+            Log.d("SyncWorker", "🔄 Starting synchronization...")
+
+            val syncResult = repository.syncFlightsToServer()
+            repository.fetchFlightsFromServer()
+
+            if (syncResult) {
+                Log.d("SyncWorker", "✅ Auto-sync completed successfully")
+                Result.success()
+            } else {
+                Log.w("SyncWorker", "⚠️ Partial sync: some flights may not have been synced. Retrying...")
+                Result.retry()
+            }
+
         } catch (e: Exception) {
-            Log.e("SyncWorker", " Unexpected error: ${e.message}")
+            Log.e("SyncWorker", "❌ Auto-sync failed: ${e.message}")
             Result.retry()
         }
     }

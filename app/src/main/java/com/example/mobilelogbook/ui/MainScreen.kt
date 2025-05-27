@@ -1,163 +1,128 @@
-package com.example.mobilelogbook.ui
+package com.example.mobilelogbook.ui.screens
 
-import android.content.res.Configuration
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.*
-import com.example.mobilelogbook.repository.FlightRepository
+import androidx.navigation.NavController
+import com.example.mobilelogbook.data.FlightEntity
 import com.example.mobilelogbook.session.UserSession
-import com.example.mobilelogbook.ui.screens.AddFlightScreen
-import com.example.mobilelogbook.ui.screens.FlightListScreen
-import com.example.mobilelogbook.ui.screens.LoginScreen
 import com.example.mobilelogbook.ui.theme.ThemeViewModel
+import com.example.mobilelogbook.viewmodel.MobileFlightViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    repository: FlightRepository,
+    navController: NavController,
+    flightViewModel: MobileFlightViewModel,
     themeViewModel: ThemeViewModel
 ) {
-    val navController = rememberNavController()
-    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val flights by flightViewModel.flights.collectAsState()
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    val username = UserSession.getUsername() ?: "Unknown"
 
-    val isUserLoggedIn = remember { mutableStateOf(UserSession.getUsername() != null) }
-    var refreshTrigger by remember { mutableStateOf(false) }
-    var showAddFlight by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        flightViewModel.loadFlightsForCurrentUser()
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mobile Logbook") },
+                title = { Text("Flight Logbook") },
                 actions = {
+                    // Toggle Theme
                     IconButton(onClick = { themeViewModel.toggleTheme() }) {
                         Icon(
                             imageVector = if (isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
                             contentDescription = "Toggle Theme"
                         )
                     }
-                    if (isUserLoggedIn.value) {
-                        IconButton(onClick = {
-                            UserSession.clear()
-                            isUserLoggedIn.value = false
-                            showAddFlight = false
-                            Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
-                            if (!isLandscape) {
-                                navController.navigate("login") {
-                                    popUpTo("flightList") { inclusive = true }
-                                }
-                            }
-                        }) {
-                            Icon(Icons.Default.Logout, contentDescription = "Logout")
+                    // Manual Sync
+                    IconButton(onClick = {
+                        coroutineScope.launch {
+                            Log.d("MainScreen", "📡 Manual sync triggered")
+                            flightViewModel.syncFromServerIfOnline()
+                            Toast.makeText(context, "Synced with server (if online)", Toast.LENGTH_SHORT).show()
                         }
+                    }) {
+                        Icon(Icons.Default.CloudSync, contentDescription = "Sync")
+                    }
+                    // Profile Section - подаване на flightCount към savedStateHandle!
+                    IconButton(onClick = {
+                        navController.currentBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("flightCount", flights.size)
+                        navController.navigate("profile")
+                    }) {
+                        Icon(Icons.Default.Person, contentDescription = "Profile")
+                    }
+                    // Logout
+                    IconButton(onClick = {
+                        UserSession.clear()
+                        Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
+                        navController.navigate("login") {
+                            popUpTo("main") { inclusive = true }
+                        }
+                    }) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
                     }
                 }
             )
         },
         floatingActionButton = {
-            if (!isLandscape && isUserLoggedIn.value) {
-                FloatingActionButton(onClick = {
-                    navController.navigate("addFlight")
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add Flight")
-                }
+            FloatingActionButton(onClick = {
+                navController.navigate("addFlight")
+            }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Flight")
             }
         }
-    ) { padding ->
-        if (isLandscape && isUserLoggedIn.value) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-                FlightListScreen(
-                    navController = navController,
-                    repository = repository,
-                    modifier = Modifier.weight(1f),
-                    refreshTrigger = refreshTrigger
-                )
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(16.dp)
+        ) {
+            Text(text = "Logged in as: $username", style = MaterialTheme.typography.titleSmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Total flights: ${flights.size}")
+            Spacer(modifier = Modifier.height(16.dp))
 
-                if (showAddFlight) {
-                    AddFlightScreen(
-                        navController = navController,
-                        repository = repository,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 8.dp),
-                        onFlightSaved = {
-                            refreshTrigger = !refreshTrigger
-                            showAddFlight = false
-                        },
-                        onBackToList = {
-                            showAddFlight = false
-                        }
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(32.dp)
-                    ) {
-                        Button(onClick = { showAddFlight = true }) {
-                            Text("➕ Add Flight")
-                        }
+            if (flights.isEmpty()) {
+                Text("No flights found.")
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(flights) { flight ->
+                        FlightItem(flight)
                     }
                 }
             }
-        } else if (!isUserLoggedIn.value) {
-            NavHost(
-                navController = navController,
-                startDestination = "login",
-                modifier = Modifier.padding(padding)
-            ) {
-                composable("login") {
-                    LoginScreen(
-                        navController = navController,
-                        onLoginSuccess = {
-                            isUserLoggedIn.value = true
-                            refreshTrigger = !refreshTrigger
-                            navController.navigate("flightList") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        },
-                        themeViewModel = themeViewModel
-                    )
-                }
-            }
-        } else {
-            NavHost(
-                navController = navController,
-                startDestination = "flightList",
-                modifier = Modifier.padding(padding)
-            ) {
-                composable("flightList") {
-                    FlightListScreen(
-                        navController = navController,
-                        repository = repository,
-                        refreshTrigger = refreshTrigger
-                    )
-                }
-                composable("addFlight") {
-                    AddFlightScreen(
-                        navController = navController,
-                        repository = repository,
-                        onFlightSaved = {
-                            refreshTrigger = !refreshTrigger
-                            navController.popBackStack()
-                        }
-                    )
-                }
-            }
+        }
+    }
+}
+
+@Composable
+fun FlightItem(flight: FlightEntity) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("✈Flight ${flight.departureAirport} ➡ ${flight.arrivalAirport}")
+            Text("👨‍✈️ ${flight.pilotName}")
+            Text("🕒 Duration: ${flight.flightDuration} min")
+            Text("✅ Synced: ${if (flight.synced) "Yes" else "No"}")
         }
     }
 }

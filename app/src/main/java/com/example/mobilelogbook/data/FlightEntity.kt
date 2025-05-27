@@ -1,62 +1,57 @@
 package com.example.mobilelogbook.data
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.google.gson.annotations.SerializedName
+import com.example.mobilelogbook.data.FlightLogMobileDto
 
 @Entity(tableName = "flight_log")
 data class FlightEntity(
     @PrimaryKey(autoGenerate = true)
-    @SerializedName("id")
-    @ColumnInfo(name = "id")
     val id: Long = 0L,
 
-    @SerializedName("departure_time")
-    @ColumnInfo(name = "departure_time")
-    val departureTime: String, // ISO формат
-
-    @SerializedName("arrival_time")
-    @ColumnInfo(name = "arrival_time")
-    val arrivalTime: String, // ISO формат
-
-    @SerializedName("flight_duration")
-    @ColumnInfo(name = "flight_duration")
-    val flightDuration: Int? = null,
-
-    @SerializedName("pilot_name")
-    @ColumnInfo(name = "pilot_name")
+    val departureTime: String,
+    val arrivalTime: String,
+    val flightDuration: Int,
     val pilotName: String,
-
-    @SerializedName("departure_airport")
-    @ColumnInfo(name = "departure_airport")
+    val username: String,
     val departureAirport: String,
-
-    @SerializedName("arrival_airport")
-    @ColumnInfo(name = "arrival_airport")
     val arrivalAirport: String,
 
-    @SerializedName("aircraft")
-    @ColumnInfo(name = "aircraft")
+    val distance: Int? = null,
+    val totalFlightTime: Long? = null,
+
+    // Aircraft
+    val aircraftId: Long? = null,
     val aircraft: String? = null,
+    val aircraftMake: String? = null,
+    val aircraftModel: String? = null,
+    val aircraftRegistration: String? = null,
 
-    @SerializedName("username")
-    @ColumnInfo(name = "username")
-    val username: String,
+    // Flight time
+    val flightTimeId: Long? = null,
+    val multiPilotTime: Int? = null,
+    val singlePilotTime: Int? = null,
 
-    @SerializedName("status")
-    @ColumnInfo(name = "status")
-    val status: String = "pending",
+    // Takeoff / Landing
+    val takeoffId: Long? = null,
+    val takeoffType: String? = null,
 
-    @SerializedName("flight_time_id")
-    @ColumnInfo(name = "flight_time_id")
-    val flightTimeId: Long,
+    val landingId: Long? = null,
+    val landingType: String? = null,
 
-    @SerializedName("landing_id")
-    @ColumnInfo(name = "landing_id")
-    val landingId: Long,
+    // Operational / Function / Remarks
+    val operationalConditionId: Long? = null,
+    val operationalCondition: String? = null,
+    val nightFlightTime: Int? = null,
 
-    @SerializedName("pilot_function_id")
-    @ColumnInfo(name = "pilot_function_id")
-    val pilotFunctionId: Long
+    val pilotFunctionId: Long? = null,
+    val pilotFunction: String? = null,
+
+
+    val remarksId: Long? = null,
+    val remarksText: String? = null,
+
+    val pilotRole: String? = null,
+
+    val synced: Boolean = false
 )
